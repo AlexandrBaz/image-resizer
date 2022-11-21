@@ -1,3 +1,5 @@
+import org.imgscalr.Scalr;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -7,12 +9,14 @@ public class ImageResizer implements Runnable {
     private final int newWidth;
     private final String dstFolder;
     private final long start;
+    private final int core;
 
-    public ImageResizer(File[] files, int newWidth, String dstFolder, long start){
+    public ImageResizer(File[] files, int newWidth, String dstFolder, long start, int core){
         this.files = files;
         this.newWidth = newWidth;
         this.dstFolder = dstFolder;
         this.start = start;
+        this.core = core;
     }
 
     @Override
@@ -23,20 +27,7 @@ public class ImageResizer implements Runnable {
                 if (image == null) {
                     continue;
                 }
-
-                int newHeight = (int) Math.round(image.getHeight() / (image.getWidth() / (double) newWidth));
-
-                BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
-
-                int widthStep = image.getWidth() / newWidth;
-                int heightStep = image.getHeight() / newHeight;
-
-                for (int x = 0; x < newWidth; x++) {
-                    for (int y = 0; y < newHeight;y++){
-                        int rgb = image.getRGB(x * widthStep, y * heightStep);
-                        newImage.setRGB(x, y, rgb);
-                    }
-                }
+                BufferedImage newImage = resizeImage(image, newWidth);
                 File newFile = new File(dstFolder + "/" + file.getName());
                 ImageIO.write(newImage, "jpg", newFile);
             }
@@ -45,6 +36,11 @@ public class ImageResizer implements Runnable {
             ex.printStackTrace();
             System.out.println("Error with resizer" + ex);
         }
-        System.out.println("finished after start: " + (System.currentTimeMillis() - start) + "ms");
+        System.out.println("finished after start: " + " core - " + core + " - " + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    public static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth) {
+        return Scalr.resize(originalImage, Scalr.Method.BALANCED, Scalr.Mode.AUTOMATIC, targetWidth, Scalr.OP_ANTIALIAS);
     }
 }
+
